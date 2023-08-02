@@ -1,40 +1,58 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "getkey.h"
 
-char* manager(const char* filename, const char* operation, const char* content) {
-	// If error
-	if (operation == "append" && content == NULL) {return "\033[1;31mERROR:\033[0m THE CONTENT CAN'T BE NULL WITH APPEND OPERATION";};
+int ansicode(const char* operation){ // To write ansicodes
+	printf(operation);
+	fflush(stdout);
+};
 
-	if (operation == "read"){
+char* manager(const char* filename, const char* operation, char* content) {
+	// If error
+	if (!strcmp(operation, "append") && content == NULL) {return "\033[1;31mERROR:\033[0m THE CONTENT CAN'T BE NULL WITH APPEND OPERATION";};
+
+	if (!strcmp(operation, "read")){
 		FILE* f = fopen(filename, "r");
 		struct stat st;
-		stat(filename, &st);
+		stat(filename, &st); // Creating a struct with the file size
 
 		const size_t SIZE = st.st_size;
 		char buff[SIZE];
 		fread(buff, 1, SIZE, f);
 		fclose(f);
 
-		return buff;
-	}else if (operation == "append"){
-		FILE* f = fopen(filename, "a");
-		struct stat st;
-		stat(filename, &st);
+		char *p = calloc(SIZE, 1); // Save the info in heap
+		strcpy(p, buff);
 
-		const size_t SIZE = st.st_size;
-		char buff[SIZE];
-		fwrite(content, 1, SIZE, f);
+		return p;
+	}else if (!strcmp(operation, "append")){
+		FILE* f = fopen(filename, "a");
+
+		char *str = calloc(strlen(content)+6, 1); // Save the info heap
+		strcpy(str, "[ ] "); // Copy 
+		strcat(str, content); // Concat
+		strcat(str, "\n"); // Concat
+		const size_t SIZE = strlen(str);
+
+		fwrite(str, 1, SIZE, f);
 		fclose(f);
 
 		return "DONE";
 	};
 };
 
-int main() {
-	puts(manager("./test", "read", NULL));
-
+int main() {	
+	ansicode("\033[2J\033[H"); // Cleaning the terminal
+	char *p = manager("./tasks", "read", NULL);
+	puts(p); // Print the output
+	free(p); // Free the heap
+	ansicode("\033[1C");
+	ansicode("\033[2A");
+	
 	struct termios tty, old;
 	tcgetattr(0, &old);
 	tty = old;
@@ -44,14 +62,15 @@ int main() {
 		getkey(&key);
 		if (!key.key) {
 			if (key.esc) {
+				ansicode("\033[2J\033[0m");
 				break;
 			}else if (key.arrow==1) {
-				puts("UP");
+				ansicode("\033[1A");
 			}else if (key.arrow==2) {
-				puts("DOWN");
+				ansicode("\033[1B");
 			};
 		} else {
-			if (key.key == 10) {puts("ENTER");continue;}
+			if (key.key == 10) {puts("x");ansicode("\033[1C\033[1A");continue;}
 			else if (key.key == ' ') {puts("SPACE");continue;}
 			puts("ANOTHER KEY");
 		}

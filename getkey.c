@@ -29,6 +29,12 @@ void handleEsc(struct pollfd *rdfd, struct Key *k) {
 		else if (key[1]==66) {
 			k->arrow = 2;
 		}
+		else if (key[1]==67){
+			k->arrow = 3;
+		}
+		else if (key[1]==68){
+			k->arrow = 4;
+		};
 	}
 }
 
