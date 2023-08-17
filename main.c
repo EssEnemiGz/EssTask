@@ -45,6 +45,27 @@ char* manager(const char* filename, const char* operation, char* content) {
 	};
 };
 
+int* get_pos(){
+	fflush(stdin);
+	ansicode("\033[6n");
+	int yx[2] = {0,0};
+	int c=-1;
+
+	for (;;){
+		char buff[1];
+		read(0, buff, 1);
+		if (buff[0] == 'R') break;
+		if (buff[0] == '[' || buff[0] == ';') {c++;continue;}
+		if (c==-1) continue;
+		yx[c] *= 10; yx[c] += buff[0]-48;
+	};
+	
+	int *p = calloc(2, 1); // Save the info in heap
+	p[0] = yx[0]; p[1] = yx[1];
+
+	return p;
+};
+
 int main() {	
 	ansicode("\033[2J\033[H"); // Cleaning the terminal
 	char *p = manager("./tasks", "read", NULL);
@@ -61,6 +82,7 @@ int main() {
 	for (;;) {
 		getkey(&key);
 		if (!key.key) {
+			get_pos();
 			if (key.esc) {
 				ansicode("\033[2J\033[0m");
 				break;
@@ -70,8 +92,8 @@ int main() {
 				ansicode("\033[1B");
 			};
 		} else {
-			if (key.key == 10) {puts("x");ansicode("\033[1C\033[1A");continue;}
-			else if (key.key == ' ') {puts("SPACE");continue;}
+			if (key.key == 10) {ansicode("\033[1C\033[1A");continue;}
+			else if (key.key == ' ') continue
 			puts("ANOTHER KEY");
 		}
 	}
